@@ -1,0 +1,44 @@
+rule {Array, []}:
+lex:
+if self.code[self.character] == "[":
+  self.tokens.append(Token("LArray"))
+elif self.code[self.character] == "]":
+  self.tokens.append(Token("RArray"))
+
+parse:
+# form array
+building = False
+paren_body = []
+start = 0
+index = 0
+t = 0
+while t < len(ast):
+    if isinstance(ast[t], Token):
+        if ast[t].type == "LArray":
+            if index == 0:
+                building = True
+                start = t
+            else:
+                paren_body.append(ast[t])
+            index += 1
+        elif ast[t].type == "RArray":
+            index -= 1
+            if index == 0:
+                building = False
+                ptok = ast_paren(paren_body)
+                ast[start] = ptok
+                ast[start].body = self.parse(ast[start].body)
+                paren_body = []
+                ast = ast[:start+1] + ast[t+1:]
+            else:
+                paren_body.append(ast[t])
+        else:
+            if building:
+                paren_body.append(ast[t])
+    else:
+        if building:
+            paren_body.append(ast[t])
+    
+    # next token
+    t += 1
+end
